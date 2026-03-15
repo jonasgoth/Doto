@@ -1,25 +1,25 @@
-# FocusDay — Personal Life Management App
+# Slate — Personal Productivity App
 ## Project Specification
 
 ---
 
 ## Overview
 
-A personal productivity app for daily focus, habit rituals, and life planning. Built for one user. Accessible via a web browser and a native iOS app, with all data synced in real time through Supabase.
+A personal productivity app for daily focus and life planning. Built for one user. Accessible via a web browser and a native iOS app, with all data synced in real time through Supabase.
 
-The core philosophy: each day is a clean slate with intentional focus on what actually matters, supported by rituals and a backlog for everything else.
+The core philosophy: each day is a clean slate. No categories, no priorities, no complexity — just a short list of things that matter today, a backlog for everything else, and a view of what's coming up.
 
 ---
 
 ## Build Sequence
 
-The project is split into two distinct steps. Step 1 must be fully complete before starting Step 2.
+The project is split into two steps. Step 1 must be fully complete before starting Step 2.
 
 ### Step 1 — Web App (Next.js)
 Get all functionality working in the browser first. This is the primary build phase. Supabase is set up here and all data logic is established. The web app is the source of truth for the data model.
 
 ### Step 2 — Mobile App (Expo / React Native)
-Rebuild the UI in React Native, connecting to the same Supabase project. Add mobile-specific features (notifications, widget) as a final layer. The Supabase queries are identical to the web app — only the UI layer changes.
+Rebuild the UI in React Native, connecting to the same Supabase project. Add mobile-specific features (notifications, widget) as a final layer. Supabase queries are identical — only the UI layer changes.
 
 ---
 
@@ -28,12 +28,17 @@ Rebuild the UI in React Native, connecting to the same Supabase project. Add mob
 ### Shared
 - **Database & Backend:** Supabase (Postgres, real-time subscriptions, free tier)
 - **Language:** TypeScript throughout
+- **Package manager:** npm
+- **Date handling:** date-fns
 
 ### Step 1 — Web
 - **Framework:** Next.js (App Router)
 - **Styling:** Tailwind CSS
+- **Animations:** framer-motion (minimal — only for delete transitions and hover reveals)
 - **Supabase client:** `@supabase/supabase-js`
 - **Deployment:** Vercel (free tier, personal use)
+- **No UI component library** — all components built from scratch with Tailwind
+- **No testing required in v1**
 
 ### Step 2 — Mobile
 - **Framework:** Expo (React Native), bare workflow
@@ -45,249 +50,307 @@ Rebuild the UI in React Native, connecting to the same Supabase project. Add mob
 
 ---
 
-## Navigation Structure
+## Project Structure (Step 1 — Web)
 
-Four sections, consistent across web and mobile:
+```
+app/
+├── layout.tsx              # Root layout with sidebar
+├── page.tsx                # Redirects to /today
+├── today/page.tsx
+├── backlog/page.tsx
+└── plans/page.tsx
+components/
+├── Sidebar.tsx
+├── TaskCard.tsx            # Shared card: checkbox + editable title + hover actions
+├── PlanCard.tsx            # Plan-specific card with emoji, date badge, tooltip
+├── EditableText.tsx        # Click-to-edit inline text component
+├── Checkbox.tsx
+├── DeleteButton.tsx        # Subtle ✕ button, shown on hover
+├── AddButton.tsx           # "+ Add" with subtle hover background
+├── SectionLabel.tsx        # Light gray section label text
+├── AddTaskModal.tsx        # Modal with today/backlog toggle
+└── AddPlanModal.tsx        # Modal with title + date picker
+lib/
+├── supabase.ts             # Supabase client init (single instance)
+└── queries/
+    ├── todos.ts            # day_todos CRUD + real-time subscription
+    ├── backlog.ts          # backlog_todos CRUD + real-time subscription
+    └── plans.ts            # plans CRUD + real-time subscription
+hooks/
+├── useTodos.ts             # Custom hook for today's todos
+├── useBacklog.ts
+└── usePlans.ts
+types/
+└── index.ts                # Shared TypeScript types
+```
+
+---
+
+## Navigation
+
+Three sections. No other nav items, no logo, no settings icon in the sidebar.
 
 | Section | Icon | Description |
 |---|---|---|
-| **Today** | Calendar | Daily focus todos grouped by time of day |
-| **Backlog** | Checklist | Long-term todo list with priority grouping |
-| **Rituals** | Face/smiley | Fixed morning and evening routines |
-| **Plans** | Event/flag | Upcoming events and family commitments |
+| **Today** | Circle checkmark | Daily focus list |
+| **Backlog** | Rounded square with lines | Persistent todo list |
+| **Plans** | Calendar | Upcoming events |
 
-On web: sidebar or top navigation. On mobile: bottom tab bar.
+### Web Sidebar
+- Left-aligned, ~200px wide, white background
+- Each nav item: icon + label + count (right-aligned, muted)
+- Active state: black text, medium weight. Inactive: muted gray, normal weight
+- No logo, no branding, no settings gear
+- Counts show incomplete items (Today, Backlog) or total items (Plans)
+
+### Mobile
+- Bottom tab bar, white background, subtle top border
+- Active: filled icon + black label. Inactive: outline icon + gray label
 
 ---
 
 ## Section 1: Today
 
 ### Purpose
-A daily-wiped list of things to do today. Encourages focus by surfacing the 1–2 most important tasks.
+A daily list of things to focus on. No categories, no time-of-day grouping. Just tasks.
 
 ### Header
-- Large serif font displaying the day name (e.g. **"Thursday"**)
-- Subtitle with full date (e.g. "January 15th, 2026")
-- Left/right arrows to navigate to previous days (read-only log view for past days)
+- Large serif font displaying the day name (e.g. **"Friday"**)
+- Subtitle with date in format: **"February 28"** (no year, no ordinal suffix)
+- No day navigation arrows — Today always shows today
 
-### Sections
-Tasks are grouped by time of day. Each section is collapsible with a pill header showing icon + label + count:
+### Layout
+The Today view has two sections, displayed vertically:
 
-- **⏰ ANYTIME** — tasks with no specific time
-- **🌅 MORNING** — tasks for the morning
-- **☀️ AFTERNOON** — tasks for the afternoon
-- **🌙 EVENING** — tasks for the evening
+1. **Focus** — the user's tasks for today
+2. **Plans** — a preview of upcoming plans (pulled from the Plans tab)
 
-Each section has a **+** button on the right to add a task directly to that section.
+### Focus Section
+- Section label: "Focus" in light gray text
+- A flat list of tasks, no sub-grouping
+- Each task is a `TaskCard` (see Component Specs below)
+- Completed tasks stay in place (not duplicated, not moved) — they show with strikethrough and reduced opacity
+- **"+ Add"** button below the task list, right-aligned, with subtle hover background
 
-### Task Row
-- Emoji icon on the left (user picks from a set, or auto-assigned)
-- Task title
-- Optional duration label below title (e.g. "30m", "5m")
-- Optional sub-task progress indicator (e.g. "0/4") with expand toggle
-- Circle checkbox on the right — tap/click to complete
-- Completed tasks show with strikethrough and fade
-
-### Focus Prompt
-When the Today view has more than 3 tasks:
-- Show a subtle prompt: **"What's most important today?"**
-- User taps/clicks 1–2 tasks to mark as **focus** — these get a visual highlight (soft colored left border)
-- Focus tasks appear pinned at the top regardless of section
+### Plans Preview
+- Section label: "Plans" in light gray text
+- Shows the first 3 upcoming plans as `PlanCard` components
+- **"+ Add"** button below, right-aligned — clicking navigates to the Plans tab
 
 ### Daily Wipe
-- At midnight, today's tasks are archived to a daily log in Supabase and the list resets
-- Incomplete tasks are NOT automatically moved to backlog — user gets a prompt: **"Clear"** or **"Move to Backlog"**
+- Triggered client-side: on app load, if `day_todos` contains rows where `date < today`, run the archive-and-prompt flow
+- Incomplete tasks trigger a prompt: **"You have X incomplete tasks from yesterday"** with two actions: **"Clear"** (delete them) or **"Move to Backlog"** (transfer to backlog_todos, then delete from day_todos)
+- Completed tasks are archived to `day_logs` as a JSON snapshot, then deleted from `day_todos`
 
-### Log
-- Navigating to a past date shows a read-only archived view of that day
-- Shows completed and incomplete tasks, nothing editable
-
-### Add Task
-- **+** FAB (mobile) or **+ Add task** button (web)
-- Quick-add modal: task title, time-of-day section, optional duration, optional emoji
-- Option to "Add to Backlog instead"
+### Empty State
+- When no tasks exist, show the "Focus" label and the "+ Add" button only
+- No placeholder illustration or motivational text
 
 ---
 
 ## Section 2: Backlog
 
 ### Purpose
-A persistent list of things to do eventually. Not day-specific. Organized by priority.
+A persistent flat list of things to do eventually. No priorities, no categories, no grouping.
 
 ### Header
-- Large title: **"To-do"**
+- Large serif title: **"Backlog"**
 
-### Sections
-Tasks grouped by priority, each collapsible with a colored pill header:
+### Task List
+- A single flat list of `TaskCard` components
+- Each card shows hover actions: **"→ Today"** button and **delete ✕**
+- **"→ Today"** moves the item to `day_todos` (with today's date) and removes it from `backlog_todos`
+- Completed tasks appear in a "Completed" section at the bottom with a section label
+- **"+ Add"** button below the active task list, right-aligned
 
-- **🔺 HIGH** — red/salmon pill
-- **🟠 MEDIUM** — orange pill
-- **🔽 LOW** — purple/muted pill
-- **📋 TO-DO** (no priority set) — neutral
+### Add Task Modal
+- Same modal as Today, with a toggle between "Today" and "Backlog" destination
+- Modal fields: task title only (single text input)
+- Submit on Enter key or click "Add" button
 
-Each section shows count and has a **+** button.
-
-### Task Row
-- Emoji icon left
-- Task title
-- Circle checkbox right
-- Hover (web) or swipe/long-press (mobile) to reveal: **"Add to Today"**, **"Change Priority"**, **"Delete"**
-- Completed tasks appear in a collapsed "Completed" section at the bottom
-
-### Quick Actions
-- From any backlog task → push to Today (choose time-of-day section)
-- From Today's add modal → send to backlog instead
-- From Today's task → long-press/hover to move to backlog
+### Empty State
+- Show the "+ Add" button only
 
 ---
 
-## Section 3: Rituals
+## Section 3: Plans
 
 ### Purpose
-Fixed recurring checklists for morning and evening. These never wipe — they reset daily but the tasks themselves are permanent until deleted. Think of them as habits, not todos.
+Upcoming events and commitments with dates. Not todos — just things to be aware of.
 
-### Sections
-Two sections, not collapsible:
-- **🌅 Morning Rituals**
-- **🌙 Evening Rituals**
+### Header
+- Large serif title: **"Plans"**
 
-### Task Row
-Same as Today — emoji, title, optional duration, checkbox. Completion state resets at midnight daily.
+### Plan List
+- A flat list of `PlanCard` components, sorted by date (earliest first)
+- Each plan shows: emoji (😊 default) + title + days-until badge + delete ✕ on hover
+- Hovering near the date area shows a tooltip with the full date (e.g. "April 17")
+- **"+ Add"** button below, right-aligned
 
-### Management
-- Click/long-press a ritual to edit or delete
-- **+** button to add a new ritual to morning or evening
-- Rituals are completely separate from Today and Backlog — they never appear there
+### Add Plan Modal
+- Fields: title (text input) + date (date picker)
+- No emoji picker in v1 — all plans use the default emoji
 
----
-
-## Section 4: Plans
-
-### Purpose
-High-level upcoming commitments — not daily todos but things to be aware of across the coming weeks.
-
-### Two sections:
-- **📅 Upcoming** — appointments, events, deadlines with a specific date
-- **👨‍👩‍👧 Familie denne uge** — family commitments for the current week, no date required
-
-### Item Row
-- Title
-- Optional date/time
-- Optional emoji or tag
-- Click/tap to edit, swipe or hover to delete
+### Empty State
+- Show the "+ Add" button only
 
 ---
 
-## Notifications (Step 2 — Mobile only)
+## Component Specs
 
-Three local scheduled push notifications per day. Defaults (user can adjust in settings):
+### TaskCard
+Used in Today and Backlog. Consistent appearance across both.
 
-| Time | Message |
-|---|---|
-| **08:00** | "God morgen — hvad er dit fokus i dag?" |
-| **13:00** | "Middag — hvordan går det?" |
-| **20:00** | "Aften — wrap up dine ritualer." |
+```
+┌─────────────────────────────────────────────────┐
+│  ○  Task title here                          ✕  │
+└─────────────────────────────────────────────────┘
+```
 
-- All notifications are **local** (no server push needed)
-- Configured via `expo-notifications`
-- Each can be toggled on/off and time-adjusted in settings
+- White background, 1px border `#EDEDE8`, border-radius 12px
+- Padding: 15px vertical, 18px horizontal
+- **Checkbox** on the left (22px circle, 1.5px border `#E5E5E0`)
+- **Title** is an inline-editable text field — click to edit, Enter to save, Escape to cancel
+- **Delete ✕** appears on hover (right side) — only when task is completed (Today) or always (Backlog)
+- Completed state: green checkbox `#49EA8B` with white checkmark, title gets strikethrough + reduced opacity
+
+### PlanCard
+Used in Plans tab and the Today plans preview.
+
+```
+┌─────────────────────────────────────────────────┐
+│  😊  Plan title here                   ✕ 48 days │
+└─────────────────────────────────────────────────┘
+```
+
+- Same card style as TaskCard (white, border, 12px radius)
+- No checkbox — plans are not completable
+- **Emoji** on the left (default: 😊)
+- **Title** is inline-editable
+- **Delete ✕** slides in from left of the date on hover, pushing the date badge right (animated with 0.2s ease transition)
+- **Days-until badge** on the right in muted text (e.g. "48 days", "Tomorrow", "Today")
+- **Date tooltip** appears only when hovering in proximity of the date area — dark background, white text, shows full date (e.g. "April 17")
+
+### Checkbox
+- 22px circle
+- Unchecked: 1.5px border `#E5E5E0`, transparent fill
+- Checked: `#49EA8B` fill (green), white checkmark SVG
+- Transition: 0.2s ease on all properties
+
+### DeleteButton
+- 22px circle, no border, transparent background
+- Contains a small ✕ icon in muted gray
+- Hover: subtle background `#F0EDED`
+- Transition: 0.15s ease
+
+### AddButton
+- Right-aligned text: "+ Add" in muted gray
+- Padding: 6px 12px, border-radius 8px
+- Hover: subtle background `rgba(0,0,0,0.04)`
+- Transition: background-color 0.15s ease
+
+### EditableText
+- Default: renders as a regular `<span>` with cursor: text
+- Click activates an `<input>` in place — no border, no background, same font/size
+- Enter: commits the change. Escape: reverts. Blur: commits.
+- Completed tasks: strikethrough + opacity 0.45
+
+### SectionLabel
+- Font size: 14px, font weight: 400, color: muted gray `#B5B5B0`
+- Margin bottom: 12px
+- No icons, no pills, no backgrounds — just text
+
+### AddTaskModal
+- Backdrop: `rgba(0,0,0,0.18)` with `backdrop-filter: blur(3px)`
+- Card: white, border-radius 16px, padding 28px, max-width 380px
+- Title: "New task" in serif font
+- Single text input with placeholder "Task name"
+- Toggle buttons: "Today" / "Backlog" — active state is dark fill with white text
+- Submit button: full-width, dark background, white text, "Add"
+- Keyboard: Enter submits, Escape closes
+
+### AddPlanModal
+- Same style as AddTaskModal
+- Title: "New plan"
+- Fields: title input ("What's coming up?") + date input
+- Submit button: "Add"
 
 ---
 
-## Home Screen Widget (Step 2 — Mobile only)
+## Interaction Patterns
 
-Built with `expo-widgets` (Expo SDK ALPHA).
+### Hover Actions (Web)
+- **Today tasks (completed):** delete ✕ appears on right
+- **Backlog tasks:** "→ Today" button + delete ✕ appear on right. "→ Today" has hover background effect
+- **Plans:** delete ✕ slides in from left of date badge, pushing date right
 
-### Widget content (systemMedium — 4x2):
-- Day label at top (e.g. "Thursday")
-- Today's **focus tasks** (1–2 items) with title and completion state
-- If no focus set: show first 2 tasks from Today
-- Tapping opens the app to the Today tab
+### Inline Editing
+- All task titles and plan titles are editable by clicking the text directly
+- No edit modal, no separate edit mode — just click and type
 
-### Update trigger:
-- Calls `updateWidgetSnapshot` whenever the app opens or a task is completed
+### Push to Today
+- From Backlog: click "→ Today" on hover → creates a new `day_todo` with today's date, deletes the `backlog_todo`
+- From Add Task Modal: toggle destination to "Today" or "Backlog"
+
+### Completed Task Behavior
+- Tasks stay in their original position when completed (no reordering, no duplication)
+- Completed tasks show with green checkbox, strikethrough, and reduced opacity
+- Delete ✕ appears on hover for completed tasks
 
 ---
 
 ## Database Schema (Supabase)
 
-All tables have a single user — no auth required, no user_id column. Row Level Security disabled for personal use.
+All tables are single-user — no auth, no user_id. Row Level Security disabled.
 
 ```sql
--- Daily todos (wiped each day, archived to logs)
+-- Daily todos
 create table day_todos (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  emoji text default '📝',
-  section text check (section in ('anytime', 'morning', 'afternoon', 'evening')) default 'anytime',
-  duration text,                          -- e.g. "30m"
-  is_focus boolean default false,
   is_completed boolean default false,
-  date date not null,                     -- the day this todo belongs to
+  position integer default 0,
+  date date not null,
   created_at timestamptz default now()
-);
-
--- Sub-tasks for day todos
-create table sub_tasks (
-  id uuid primary key default gen_random_uuid(),
-  todo_id uuid references day_todos(id) on delete cascade,
-  title text not null,
-  is_completed boolean default false,
-  position integer default 0
 );
 
 -- Backlog todos (persistent, no date)
 create table backlog_todos (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  emoji text default '📝',
-  priority text check (priority in ('high', 'medium', 'low', 'none')) default 'none',
   is_completed boolean default false,
-  created_at timestamptz default now()
-);
-
--- Rituals (permanent, completion tracked separately)
-create table rituals (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  emoji text default '✨',
-  period text check (period in ('morning', 'evening')),
-  duration text,
   position integer default 0,
   created_at timestamptz default now()
 );
 
--- Daily ritual completions
-create table ritual_completions (
-  id uuid primary key default gen_random_uuid(),
-  ritual_id uuid references rituals(id) on delete cascade,
-  date date not null,
-  unique(ritual_id, date)
-);
-
--- Plans and family commitments
+-- Plans (upcoming events with dates)
 create table plans (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  emoji text,
-  type text check (type in ('event', 'family')) default 'event',
-  date date,                              -- optional for family type
+  date date,
   created_at timestamptz default now()
 );
 
--- Archived day logs (written at midnight wipe)
+-- Archived day logs (written during daily wipe)
 create table day_logs (
   id uuid primary key default gen_random_uuid(),
   date date not null unique,
   completed_count integer default 0,
   incomplete_count integer default 0,
-  todos jsonb,                            -- full snapshot of the day's todos
+  todos jsonb,
   archived_at timestamptz default now()
 );
 ```
 
+### What was removed from the schema
+- `emoji`, `section`, `duration`, `is_focus` columns from `day_todos` — the UI no longer uses these
+- `sub_tasks` table — removed, not in v1
+- `rituals` and `ritual_completions` tables — Rituals section was removed entirely
+- `emoji`, `priority` columns from `backlog_todos` — backlog is now a flat list
+- `emoji`, `type` columns from `plans` — simplified to title + date only
+
 ### Real-time
-Enable Supabase real-time on `day_todos`, `backlog_todos`, `ritual_completions` so web and mobile stay in sync without polling.
+Enable Supabase real-time on `day_todos`, `backlog_todos`, and `plans` so web and mobile stay in sync.
 
 ---
 
@@ -300,58 +363,96 @@ Web App (Next.js)  ←→  Supabase (Postgres)  ←→  Mobile App (Expo)
 - Both clients use `@supabase/supabase-js`
 - Both subscribe to real-time changes on relevant tables
 - Write from one client → other client updates within ~1 second
-- No offline support in v1 — requires internet connection
+- No offline support in v1
+
+### Query Patterns
+Use custom React hooks that wrap Supabase queries and real-time subscriptions:
+
+```typescript
+// Example: useTodos hook
+function useTodos(date: string) {
+  // 1. Fetch initial data with supabase.from('day_todos').select('*').eq('date', date)
+  // 2. Subscribe to real-time changes on day_todos filtered by date
+  // 3. Return { todos, addTodo, updateTodo, deleteTodo, loading }
+}
+```
+
+Each hook handles CRUD operations and real-time sync. Components never call Supabase directly.
 
 ---
 
 ## Design System
 
-Consistent across web and mobile. Web uses Tailwind utility classes, mobile uses React Native StyleSheet.
+### Philosophy
+Ultra-minimal. Every element earns its place. No decorative elements, no colored pills, no emoji circles, no icons in section headers. The design relies on typography, whitespace, and subtle borders.
 
 ### Typography
-- **Screen titles / day name:** Large serif font (Georgia or custom serif). ~40–48px. Not bold.
-- **Section headers:** Small caps, 11–12px, semibold, letter-spaced, uppercase
-- **Task titles:** 16px, medium weight
-- **Subtitles / duration:** 12px, muted gray
+- **Page titles (day name, "Backlog", "Plans"):** Georgia or system serif, ~44px, font-weight 400 (not bold)
+- **Section labels ("Focus", "Plans", "Completed"):** System sans-serif, 14px, font-weight 400, muted color
+- **Task/plan titles:** System sans-serif, 15px, font-weight 400
+- **Date badges / counts:** System sans-serif, 13px, font-weight 400, muted color
 
 ### Colors
-- **Background:** Pure white `#FFFFFF`
-- **Surface / card:** Off-white `#F7F7F5`
-- **Text primary:** Near-black `#1A1A1A`
-- **Text secondary:** Medium gray `#9A9A9A`
-- **HIGH priority pill:** `#FDDDD5` background, `#E05A3A` text
-- **MEDIUM priority pill:** `#FDE8D0` background, `#D97706` text
-- **LOW priority pill:** `#E8E4F0` background, `#7C5FC4` text
-- **Focus highlight:** `#EEF4FF` background or soft blue left border
-- **FAB / primary action:** Deep blue `#2563EB`
-- **Checkbox unchecked:** 22px circle, 1.5px border `#D0D0D0`
-- **Checkbox checked:** Filled `#1A1A1A`
+- **Background (content area):** `#F5F5F3`
+- **Background (sidebar / cards):** `#FFFFFF`
+- **Text primary:** `#1A1A1A`
+- **Text muted:** `#B5B5B0`
+- **Card border:** `#EDEDE8`
+- **Input/section border:** `#E5E5E0`
+- **Checkbox checked:** `#49EA8B` (green)
+- **Delete hover:** `#F0EDED`
+- **Destructive text:** `#D4736C`
 
-### Section Pill Headers
-- Rounded pill shape with light tinted background
-- Small icon + label + count
-- Chevron on right for collapse/expand toggle
+### Layout
+- Sidebar: ~200px, white background, no border-right (content area border-left creates separation)
+- Content area: max-width 640px, padding 40px 48px, light gray background
+- Card gap: 8px between cards
+- Section gap: 32px between sections (e.g. between Focus and Plans on Today)
 
-### Task Cards
-- Rounded rectangle, `border-radius: 12px`
-- Background `#F7F7F5` or subtle shadow on white
-- 16px horizontal padding, 14px vertical
-- Emoji in a soft circle background (32x32px)
-- 12px gap between cards, 20px gap between sections
+### Transitions
+- All hover effects: 0.15s ease
+- Checkbox state change: 0.2s ease
+- Plan delete button slide-in: 0.2s ease (width + opacity)
+- Modal backdrop: no transition (instant)
 
-### Navigation
-- **Web:** Clean sidebar or top nav with section labels
-- **Mobile:** Bottom tab bar, white background, subtle top border. Active: filled icon + black label. Inactive: outline icon + gray label.
+---
+
+## Notifications (Step 2 — Mobile only)
+
+Two local push notifications per day (rituals notification removed). Defaults adjustable in settings:
+
+| Time | Message |
+|---|---|
+| **08:00** | "God morgen — hvad er dit fokus i dag?" |
+| **20:00** | "Aften — har du nået det hele?" |
+
+- All notifications are local (no server push)
+- Configured via `expo-notifications`
+- Each can be toggled on/off and time-adjusted in settings
+
+---
+
+## Home Screen Widget (Step 2 — Mobile only)
+
+Built with `expo-widgets` (Expo SDK ALPHA).
+
+### Widget content (systemMedium — 4x2):
+- Day label at top (e.g. "Friday")
+- First 2 tasks from today with title and completion state
+- Tapping opens the app to the Today tab
+
+### Update trigger:
+- `updateWidgetSnapshot` on app open or task completion
 
 ---
 
 ## Settings
 
-Accessible from a gear icon.
+Minimal settings, accessible from a small gear icon or a dedicated route (not in the main nav).
 
 - Notification times — toggle + time picker (Step 2 only)
-- "Clear today's completed tasks"
-- "View full log"
+- "Clear completed tasks" — removes all completed items from today and backlog
+- "View log" — read-only archive of past days
 
 ---
 
@@ -361,7 +462,13 @@ Accessible from a gear icon.
 - Multiple users or sharing
 - Android support
 - Server-side push notifications
-- Recurring todos (rituals handle this)
+- Recurring todos
 - Calendar integration
 - Offline support
 - iCloud sync
+- Drag-to-reorder tasks
+- Task priorities or categories
+- Emoji picker for tasks
+- Task duration / time estimates
+- Sub-tasks
+- Rituals / habits section
