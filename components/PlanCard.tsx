@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { CardShell } from './CardShell';
 import { EditableText } from './EditableText';
 import { DeleteButton } from './DeleteButton';
 import type { Plan } from '@/types';
@@ -95,18 +96,7 @@ export function PlanCard({ plan, onUpdate, onDelete, readonly = false, onEnter }
   };
 
   return (
-    <div
-      className="flex items-center gap-3"
-      style={{
-        borderRadius: '8px',
-        border: '1px solid var(--border-card)',
-        background: 'var(--bg-card)',
-        boxShadow: 'var(--shadow-card)',
-        padding: '15px 18px',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <CardShell onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       {/* Emoji button + picker */}
       <div className="flex-shrink-0">
         <button
@@ -225,6 +215,6 @@ export function PlanCard({ plan, onUpdate, onDelete, readonly = false, onEnter }
           </div>
         )}
       </div>
-    </div>
+    </CardShell>
   );
 }

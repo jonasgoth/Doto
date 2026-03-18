@@ -5,12 +5,11 @@ import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTodos } from '@/hooks/useTodos';
 import { usePlans } from '@/hooks/usePlans';
-import { useRituals } from '@/hooks/useRituals';
+// import { useRituals } from '@/hooks/useRituals';
 import { useData } from '@/lib/DataContext';
 import { useMode } from '@/lib/ModeContext';
 import { TaskCard } from '@/components/TaskCard';
 import { PlanCard } from '@/components/PlanCard';
-import { RitualCard } from '@/components/RitualCard';
 import { BrainDump } from '@/components/BrainDump';
 import { SectionLabel } from '@/components/SectionLabel';
 import { AddButton } from '@/components/AddButton';
@@ -41,21 +40,21 @@ export default function TodayPage() {
   const { today } = useData();
   const { todos, addTodo, updateTodo, deleteTodo, reorderTodos, moveToBacklog } = useTodos();
   const { plans } = usePlans();
-  const { rituals, addRitual, updateRitual, deleteRitual } = useRituals();
+  // const { rituals, addRitual, updateRitual, deleteRitual } = useRituals();
   const { mode } = useMode();
 
   const [addingTask, setAddingTask] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
-  const [addingRitual, setAddingRitual] = useState(false);
+  // const [addingRitual, setAddingRitual] = useState(false);
   const [focusOpen, setFocusOpen] = useState(true);
-  const [ritualsOpen, setRitualsOpen] = useState(true);
+  // const [ritualsOpen, setRitualsOpen] = useState(true);
   const [plansOpen, setPlansOpen] = useState(true);
 
   const dayName = format(new Date(), 'EEEE');
   const dateLabel = format(new Date(), 'MMMM d');
 
   const filteredTodos = todos.filter((t) => (t.mode ?? 'personal') === mode);
-  const filteredRituals = rituals.filter((r) => (r.mode ?? 'personal') === mode);
+  // const filteredRituals = rituals.filter((r) => (r.mode ?? 'personal') === mode);
   const upcomingPlans = plans.filter((p) => (p.mode ?? 'personal') === mode).slice(0, 3);
 
   return (
@@ -84,7 +83,7 @@ export default function TodayPage() {
       </div>
 
       {/* Focus section */}
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <SectionLabel
           collapsible
           isOpen={focusOpen}
@@ -126,14 +125,22 @@ export default function TodayPage() {
               />
 
               {/* Inline add task */}
-              {addingTask && (
-                <div style={{ marginTop: '8px' }}>
-                  <InlineAddTask
-                    onAdd={async (title) => { await addTodo(title, mode); }}
-                    onCancel={() => setAddingTask(false)}
-                  />
-                </div>
-              )}
+              <AnimatePresence>
+                {addingTask && (
+                  <motion.div
+                    key="inline-add-task"
+                    initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] } }}
+                    exit={{ opacity: 0, scale: 0.97, y: 4, transition: { duration: 0.12, ease: [0.4, 0, 0.2, 1] } }}
+                    style={{ marginTop: '8px' }}
+                  >
+                    <InlineAddTask
+                      onAdd={async (title) => { await addTodo(title, mode); }}
+                      onCancel={() => setAddingTask(false)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Action buttons row */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
@@ -154,7 +161,7 @@ export default function TodayPage() {
         </motion.div>
       </div>
 
-      {/* Rituals section */}
+      {/* RITUALS SECTION HIDDEN — uncomment to restore
       <div style={{ marginBottom: '32px' }}>
         <SectionLabel
           collapsible
@@ -187,10 +194,10 @@ export default function TodayPage() {
                       exit={{ opacity: 0, height: 0, transition: { duration: 0.18, ease: [0.4, 0, 0.2, 1] } }}
                       style={{ overflow: 'hidden' }}
                     >
-                      <RitualCard
+                      <TaskCard
                         id={ritual.id}
                         title={ritual.title}
-                        isCompletedToday={ritual.completed_date === today}
+                        isCompleted={ritual.completed_date === today}
                         onToggle={(id, completed) =>
                           updateRitual(id, { completed_date: completed ? today : null })
                         }
@@ -200,15 +207,24 @@ export default function TodayPage() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
-                {addingRitual && (
-                  <InlineAddTask
-                    onAdd={async (title) => {
-                      await addRitual(title, mode);
-                      setAddingRitual(false);
-                    }}
-                    onCancel={() => setAddingRitual(false)}
-                  />
-                )}
+                <AnimatePresence>
+                  {addingRitual && (
+                    <motion.div
+                      key="inline-add-ritual"
+                      initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] } }}
+                      exit={{ opacity: 0, scale: 0.97, y: 4, transition: { duration: 0.12, ease: [0.4, 0, 0.2, 1] } }}
+                    >
+                      <InlineAddTask
+                        onAdd={async (title) => {
+                          await addRitual(title, mode);
+                          setAddingRitual(false);
+                        }}
+                        onCancel={() => setAddingRitual(false)}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 {!addingRitual && (
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <AddButton onClick={() => setAddingRitual(true)} />
@@ -219,6 +235,7 @@ export default function TodayPage() {
           </AnimatePresence>
         </motion.div>
       </div>
+      END RITUALS SECTION */}
 
       {/* Plans preview */}
       <div>

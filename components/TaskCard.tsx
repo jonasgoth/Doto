@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CardShell } from './CardShell';
 import { Checkbox } from './Checkbox';
 import { EditableText } from './EditableText';
 import { DeleteButton } from './DeleteButton';
@@ -39,18 +40,7 @@ export function TaskCard({
   const showMoveBacklogBtn = hovered && showMoveToBacklog;
 
   return (
-    <div
-      className="flex items-center gap-3"
-      style={{
-        borderRadius: '8px',
-        border: '1px solid var(--border-card)',
-        background: 'var(--bg-card)',
-        boxShadow: 'var(--shadow-card)',
-        padding: '15px 18px',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <CardShell onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <Checkbox checked={isCompleted} onChange={(checked) => onToggle(id, checked)} />
       <EditableText
         value={title}
@@ -105,6 +95,6 @@ export function TaskCard({
           <DeleteButton onClick={() => onDelete(id)} />
         </div>
       </div>
-    </div>
+    </CardShell>
   );
 }

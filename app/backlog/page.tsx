@@ -73,14 +73,22 @@ export default function BacklogPage() {
             )}
           />
 
-          {addingTask && (
-            <div style={{ marginTop: '8px' }}>
-              <InlineAddTask
-                onAdd={async (title) => { await addBacklogItem(title, mode); }}
-                onCancel={() => setAddingTask(false)}
-              />
-            </div>
-          )}
+          <AnimatePresence>
+            {addingTask && (
+              <motion.div
+                key="inline-add-task"
+                initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] } }}
+                exit={{ opacity: 0, scale: 0.97, y: 4, transition: { duration: 0.12, ease: [0.4, 0, 0.2, 1] } }}
+                style={{ marginTop: '8px' }}
+              >
+                <InlineAddTask
+                  onAdd={async (title) => { await addBacklogItem(title, mode); }}
+                  onCancel={() => setAddingTask(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           {!addingTask && (
             <div style={{ marginTop: '8px' }}>
               <AddButton onClick={() => setAddingTask(true)} />

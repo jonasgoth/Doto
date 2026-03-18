@@ -37,7 +37,7 @@
 /* ── Dark tokens (applied via data-theme="dark" on <html>) ── */
 [data-theme="dark"] {
   --bg-app: #141311;
-  --bg-card: #1E1C1A;
+  --bg-card: transparent;
   --bg-inline-add: #1A1917;
   --bg-nav: #252320;
   --bg-nav-pill: #302E2B;
@@ -46,7 +46,7 @@
   --text-muted: #6A6A65;
   --text-submuted: #6B6764;
   --text-dark-muted: #5C5C57;
-  --border-card: #2C2B28;
+  --border-card: transparent;
   --border-input: #2E2D2A;
   --bg-hover-subtle: rgba(255, 255, 255, 0.06);
   --bg-delete-hover: #252320;
@@ -54,7 +54,7 @@
   --bg-edit-active: rgba(255, 255, 255, 0.08);
   --tooltip-bg: #E8E6E2;
   --tooltip-text: #1A1A1A;
-  --shadow-card: 0 1px 4px 0 rgba(0, 0, 0, 0.3);
+  --shadow-card: none;
   --shadow-nav:
     0 0 0 1px rgba(255, 255, 255, 0.04),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -90,5 +90,5 @@ button:active {
 .page-container {
   max-width: 540px;
   margin: 0 auto;
-  padding: 60px 48px;
+  padding: 60px 48px 0;
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Checkbox } from './Checkbox';
 
 interface InlineAddTaskProps {
@@ -36,10 +35,7 @@ export function InlineAddTask({ onAdd, onCancel }: InlineAddTaskProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.12, ease: [0.4, 0, 0.2, 1] }}
+    <div
       className="flex items-center gap-3"
       style={{
         borderRadius: '8px',
@@ -67,6 +63,6 @@ export function InlineAddTask({ onAdd, onCancel }: InlineAddTaskProps) {
           fontWeight: 400,
         }}
       />
-    </motion.div>
+    </div>
   );
 }

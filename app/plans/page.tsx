@@ -75,14 +75,22 @@ export default function PlansPage() {
             </AnimatePresence>
           </div>
 
-          {addingPlan && (
-            <div style={{ marginTop: '8px' }}>
-              <InlineAddPlan
-                onAdd={async (title, date) => { await addPlan(title, date, mode); }}
-                onCancel={() => setAddingPlan(false)}
-              />
-            </div>
-          )}
+          <AnimatePresence>
+            {addingPlan && (
+              <motion.div
+                key="inline-add-plan"
+                initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] } }}
+                exit={{ opacity: 0, scale: 0.97, y: 4, transition: { duration: 0.12, ease: [0.4, 0, 0.2, 1] } }}
+                style={{ marginTop: '8px' }}
+              >
+                <InlineAddPlan
+                  onAdd={async (title, date) => { await addPlan(title, date, mode); }}
+                  onCancel={() => setAddingPlan(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           {!addingPlan && (
             <div style={{ marginTop: '8px' }}>
               <AddButton onClick={() => setAddingPlan(true)} />
