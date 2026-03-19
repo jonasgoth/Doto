@@ -13,7 +13,7 @@ export function CardShell({ children, onMouseEnter, onMouseLeave }: CardShellPro
     <div
       className="flex items-center gap-3"
       style={{
-        borderRadius: '8px',
+        borderRadius: '12px',
         border: '1px solid var(--border-card)',
         background: 'var(--bg-card)',
         boxShadow: 'var(--shadow-card)',

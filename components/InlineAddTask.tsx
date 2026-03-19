@@ -38,7 +38,7 @@ export function InlineAddTask({ onAdd, onCancel }: InlineAddTaskProps) {
     <div
       className="flex items-center gap-3"
       style={{
-        borderRadius: '8px',
+        borderRadius: '12px',
         border: '1px solid var(--border-card)',
         background: 'var(--bg-inline-add)',
         boxShadow: 'var(--shadow-card)',

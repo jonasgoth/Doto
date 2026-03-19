@@ -56,7 +56,7 @@ export function InlineAddPlan({ onAdd, onCancel }: InlineAddPlanProps) {
       data-inline-plan
       className="flex items-center gap-3"
       style={{
-        borderRadius: '8px',
+        borderRadius: '12px',
         border: '1px solid var(--border-card)',
         background: 'var(--bg-inline-add)',
         boxShadow: 'var(--shadow-card)',
